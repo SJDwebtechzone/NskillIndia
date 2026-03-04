@@ -41,6 +41,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const settingsRoutes = require("./routes/settings");
+const chatRoutes = require("./routes/chat");
 
 const app = express();
 app.use(cors());
@@ -49,6 +50,7 @@ app.use("/uploads", express.static("uploads"));
 
 app.use("/api/settings", settingsRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/api", authRoutes);
 
 app.listen(5000, () => {
