@@ -1,0 +1,124 @@
+"use client";
+
+import React, { useState } from "react";
+import { User, Lock, Loader2 } from "lucide-react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+
+const StudentLogin = () => {
+    const router = useRouter();
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+
+        if (!username || !password) {
+            setError("Please fill in all fields");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // Using existing login API
+            const res = await axios.post("http://localhost:5000/api/login", {
+                email: username,
+                password
+            });
+
+            localStorage.setItem("token", res.data.token);
+            router.push("/dashboard");
+        } catch (err: any) {
+            console.error(err);
+            setError(err.response?.data?.message || "Invalid credentials");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-[#0b1f3a] flex items-center justify-center px-4">
+            <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md animate-in fade-in zoom-in duration-500 transition-all transform animate-fadeIn">
+
+                <div className="flex justify-center mb-6">
+                    <img src="/logo.png" alt="Logo" className="h-20 w-auto object-contain" />
+                </div>
+
+                <h2 className="text-2xl font-bold text-[#0b1f3a] text-center mb-8 uppercase tracking-tight">
+                    Student Login
+                </h2>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+
+                    {/* Username */}
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold tracking-tight uppercase text-xs">
+                            Username
+                        </label>
+                        <div className="relative group">
+                            <User
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-[#0b1f3a] transition-colors"
+                                size={20}
+                            />
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg 
+                                           focus:outline-none focus:ring-2 
+                                           focus:ring-[#0b1f3a]/20 focus:border-[#0b1f3a] transition-all"
+                                placeholder="Enter username"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold tracking-tight uppercase text-xs">
+                            Password
+                        </label>
+                        <div className="relative group">
+                            <Lock
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-[#0b1f3a] transition-colors"
+                                size={20}
+                            />
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg 
+                                           focus:outline-none focus:ring-2 
+                                           focus:ring-[#0b1f3a]/20 focus:border-[#0b1f3a] transition-all"
+                                placeholder="Enter password"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="text-red-500 text-xs font-bold text-center bg-red-50 p-3 rounded-lg border border-red-100 uppercase tracking-wider">
+                            {error}
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-[#0b1f3a] text-white py-3.5 rounded-xl font-black uppercase tracking-widest
+                                   hover:bg-blue-900 transition-all duration-300 shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
+                    >
+                        {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {loading ? "Authenticating..." : "Sign In to Portal"}
+                    </button>
+
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default StudentLogin;
