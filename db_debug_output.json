@@ -1,0 +1,26 @@
+{
+  "rows": [
+    {
+      "id": 1,
+      "title": "intro",
+      "is_active": false,
+      "course_id": "airconditioner-training-ac",
+      "video_url": "http://localhost:5000/uploads/videos/video-1772646362700.mp4"
+    },
+    {
+      "id": 2,
+      "title": "intro",
+      "is_active": false,
+      "course_id": "airconditioner-training-ac",
+      "video_url": "http://localhost:5000/uploads/videos/video-1772686794922.mp4"
+    },
+    {
+      "id": 3,
+      "title": "intro",
+      "is_active": true,
+      "course_id": "airconditioner-training-ac",
+      "video_url": ""
+    }
+  ],
+  "count": 3
+}

@@ -5,7 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// --- Multer Configuration ---
+// --- Multer Configuration for Banners ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const dir = "uploads/banners/";
@@ -19,7 +19,22 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({ storage: storage });
+// --- Multer Configuration for Videos ---
+const videoStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dir = "uploads/videos/";
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, "video-" + Date.now() + path.extname(file.originalname));
+    },
+});
+
+const uploadBanner = multer({ storage: storage });
+const uploadVideo = multer({ storage: videoStorage });
 
 // --- Banners ---
 
@@ -35,7 +50,7 @@ router.get("/banners", async (req, res) => {
 });
 
 // Add a banner with image upload
-router.post("/banners", upload.single("image"), async (req, res) => {
+router.post("/banners", uploadBanner.single("image"), async (req, res) => {
     try {
         const { title, order_index } = req.body;
         const image_url = req.file ? `http://localhost:5000/uploads/banners/${req.file.filename}` : "";
@@ -103,18 +118,47 @@ router.get("/popups", async (req, res) => {
     }
 });
 
-// Add a popup
-router.post("/popups", async (req, res) => {
+// Add a popup with video upload
+router.post("/popups", uploadVideo.single("video"), async (req, res) => {
     try {
-        const { image_url, title, description, course_id } = req.body;
-        const result = await pool.query(
-            "INSERT INTO popups (image_url, title, description, course_id) VALUES ($1, $2, $3, $4) RETURNING *",
-            [image_url, title, description, course_id]
-        );
+        console.log("Receive popup upload request:", req.body);
+        const { title, description, course_id, video_placement } = req.body;
+        const video_url = req.file ? `http://localhost:5000/uploads/videos/${req.file.filename}` : "";
+
+        console.log("Inserting into database...");
+        // Provide defaults for all columns that might be mandatory
+        const query = `
+            INSERT INTO popups 
+            (title, description, course_id, video_url, video_placement, position, image_url, is_active) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+            RETURNING *
+        `;
+        const values = [
+            title || "",
+            description || "",
+            course_id || "",
+            video_url,
+            video_placement || 'intro',
+            video_placement || 'intro', // Use both just in case
+            "", // image_url
+            true // is_active
+        ];
+
+        const result = await pool.query(query, values);
+        console.log("Successfully created popup:", result.rows[0].id);
         res.json(result.rows[0]);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Server Error");
+        console.error("CRITICAL Popup upload error:");
+        console.error("Message:", err.message);
+        if (err.detail) console.error("Detail:", err.detail);
+        if (err.hint) console.error("Hint:", err.hint);
+        if (err.where) console.error("Where:", err.where);
+
+        res.status(500).json({
+            error: "Server Error during popup upload",
+            message: err.message,
+            detail: err.detail
+        });
     }
 });
 
