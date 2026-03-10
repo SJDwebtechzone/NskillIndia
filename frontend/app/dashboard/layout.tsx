@@ -22,6 +22,8 @@ import {
   Layers,
   LogOut,
   Award,
+  FileText,
+  UserPlus,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -42,6 +44,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(
     pathname.includes("/dashboard/settings")
+  );
+
+  const [isStudentManagementOpen, setIsStudentManagementOpen] = useState(
+    pathname.includes("/dashboard/student-management")
   );
 
   const userManagementItems = [
@@ -192,6 +198,50 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </li>
                   );
                 })}
+              </ul>
+            )}
+          </div>
+
+          {/* Student Management Dropdown */}
+          <div className="space-y-1 mt-1">
+            <button
+              onClick={() => setIsStudentManagementOpen(!isStudentManagementOpen)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${isStudentManagementOpen ? "text-white bg-white/5" : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <GraduationCap className={`w-5 h-5 ${isStudentManagementOpen ? "text-blue-400" : "group-hover:text-blue-400 transition-colors duration-300"}`} />
+                <span className="font-medium">Student Management</span>
+              </div>
+              {isStudentManagementOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+
+            {isStudentManagementOpen && (
+              <ul className="mt-1 ml-4 space-y-1 border-l border-white/10 pl-4 py-1">
+                <li>
+                  <Link
+                    href="/dashboard/student-management/enquiry"
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-300 ${pathname === "/dashboard/student-management/enquiry"
+                      ? "text-blue-400 font-bold bg-blue-400/10"
+                      : "text-gray-500 hover:text-white hover:bg-white/5"
+                      }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Enquiry Form</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/dashboard/student-management/admission"
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-300 ${pathname === "/dashboard/student-management/admission"
+                      ? "text-blue-400 font-bold bg-blue-400/10"
+                      : "text-gray-500 hover:text-white hover:bg-white/5"
+                      }`}
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Admission Form</span>
+                  </Link>
+                </li>
               </ul>
             )}
           </div>
