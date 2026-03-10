@@ -42,8 +42,14 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");
 const settingsRoutes = require("./routes/settings");
 const chatRoutes = require("./routes/chat");
+const pool = require("./config/db");
 
 const app = express();
+
+// Test DB Connection
+pool.connect()
+  .then(() => console.log("✅ Database Connected Successfully"))
+  .catch((err) => console.error("❌ Database Connection Failed:", err));
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
