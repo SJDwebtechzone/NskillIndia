@@ -42,3 +42,4 @@ yarn-error.log*
 backend/uploads/
 node_modules/
 .env
+.next/
