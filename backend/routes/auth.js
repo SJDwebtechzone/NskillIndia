@@ -7,32 +7,39 @@ const pool = require("../config/db");
 const router = express.Router();
 const SECRET = "mysecret";
 
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+router.post("/login", async(req, res) => {
+    try {
+        const { email, password } = req.body;
 
-  const user = await pool.query(
-    "SELECT * FROM users WHERE email=$1",
-    [email]
-  );
+        console.log("Login request:", email, password);
 
-  if (user.rows.length === 0)
-    return res.status(400).json({ message: "User not found" });
+        const user = await pool.query(
+            "SELECT * FROM users WHERE email=$1", [email]
+        );
 
-  const valid = await bcrypt.compare(
-    password,
-    user.rows[0].password
-  );
+        if (user.rows.length === 0) {
+            return res.status(400).json({ message: "User not found" });
+        }
 
-  if (!valid)
-    return res.status(400).json({ message: "Invalid password" });
+        const valid = await bcrypt.compare(
+            password.trim(),
+            user.rows[0].password
+        );
 
-  const token = jwt.sign(
-    { id: user.rows[0].id, role: user.rows[0].role },
-    SECRET,
-    { expiresIn: "1h" }
-  );
+        if (!valid) {
+            return res.status(400).json({ message: "Invalid password" });
+        }
 
-  res.json({ token });
+        const token = jwt.sign({ id: user.rows[0].id, role: user.rows[0].role },
+            SECRET, { expiresIn: "1h" }
+        );
+
+        res.json({ token });
+
+    } catch (err) {
+        console.error("Login error:", err);
+        res.status(500).json({ message: "Server error" });
+    }
 });
 
 module.exports = router;

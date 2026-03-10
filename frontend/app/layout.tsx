@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/navbar";
 import Footer from "./components/footer";
-import CoursePopup from "./components/CoursePopup";
+// import CoursePopup from "./components/CoursePopup";
 import Chatbot from "./components/Chatbot";
 import FloatingContact from "./components/FloatingContact";
 
@@ -33,7 +33,7 @@ export default function RootLayout({
         <Navbar />
         <main>{children}</main>
         <Footer />
-        <CoursePopup />
+        {/* <CoursePopup /> */}
         <Chatbot />
         <FloatingContact />
       </body>

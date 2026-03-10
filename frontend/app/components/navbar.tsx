@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -14,7 +14,9 @@ import {
   Phone,
   Mail,
   Clock,
+  ChevronDown,
 } from "lucide-react";
+import { courses } from "@/data/courses";
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -26,9 +28,29 @@ const Navbar = () => {
     return null;
   }
 
+  const [isCoursesMenuOpen, setIsCoursesMenuOpen] = useState(false);
+  const coursesMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (coursesMenuRef.current && !coursesMenuRef.current.contains(event.target as Node)) {
+        setIsCoursesMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const groupedCourses = [
+    { name: "Basic Course", items: courses.filter(c => c.category === "Basic") },
+    { name: "Advance Course", items: courses.filter(c => c.category === "Advance") },
+    { name: "International Course", items: courses.filter(c => c.category === "International") },
+  ];
+
   const menuItems = [
     { name: "Home", href: "/" },
-    { name: "Skill Training", href: "#skill-training" },
+    { name: "Skill Training", href: "/courses", dropdown: true },
     { name: "Corporate Training", href: "#corporate-training" },
     { name: "Consulting Services", href: "#consulting" },
     { name: "Course Calendar", href: "/calendar" },
@@ -107,7 +129,7 @@ const Navbar = () => {
 
       {/* Main Navbar */}
       <nav className="bg-white px-4 md:px-6 py-3 sticky top-0 z-40 border-b">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 relative">
           <Link href="/" className="flex items-center shrink-0">
             <Image
               src="/logo.png"
@@ -119,16 +141,72 @@ const Navbar = () => {
             />
           </Link>
 
-          {/* Desktop Menu */}
           <ul className="hidden lg:flex items-center justify-end flex-1 md:space-x-0.5 xl:space-x-1">
             {menuItems.map((item) => (
-              <li key={item.name} className="shrink-0">
-                <Link
-                  href={item.href}
-                  className="px-1 xl:px-4 py-2 font-bold text-[#0b1f3a] hover:text-blue-600 transition lg:text-[11px] xl:text-[13px] uppercase tracking-tighter xl:tracking-tight whitespace-nowrap"
-                >
-                  {item.name}
-                </Link>
+              <li key={item.name} className={`shrink-0 ${item.dropdown ? "" : "relative group"}`}>
+                {item.dropdown ? (
+                  <div className="static" ref={coursesMenuRef}>
+                    <button
+                      onClick={() => setIsCoursesMenuOpen(!isCoursesMenuOpen)}
+                      className={`flex items-center gap-1 px-1 xl:px-4 py-2 font-bold transition lg:text-[11px] xl:text-[13px] uppercase tracking-tighter xl:tracking-tight whitespace-nowrap ${isCoursesMenuOpen ? "text-blue-600" : "text-[#0b1f3a] hover:text-blue-600"}`}
+                    >
+                      {item.name}
+                      <ChevronDown size={14} className={`transition-transform duration-300 ${isCoursesMenuOpen ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {/* Mega Menu Dropdown */}
+                    <div className={`absolute left-1/2 -translate-x-1/2 mt-4 w-[95vw] max-w-5xl bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] z-50 border border-slate-100 overflow-hidden transition-all duration-300 origin-top ${isCoursesMenuOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"}`}>
+                      <div className="p-4 px-6 bg-gradient-to-br from-white to-slate-50/50">
+                        <div className="grid grid-cols-3 gap-6">
+                          {groupedCourses.map((group) => (
+                            <div key={group.name} className="space-y-2">
+                              <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
+                                <div className="w-1 h-4 bg-blue-600 rounded-full"></div>
+                                <h4 className="font-black text-slate-800 text-[9px] tracking-[0.2em] uppercase">{group.name}</h4>
+                              </div>
+                              <ul className="grid grid-cols-1 gap-0.5">
+                                {group.items.map((course: any) => (
+                                  <li key={course.id}>
+                                    <Link
+                                      href={`/courses/${course.id}`}
+                                      className="block p-1 px-3 rounded-md hover:bg-slate-50 text-[#0b1f3a] hover:text-blue-700 transition-all group/item"
+                                      onClick={() => setIsCoursesMenuOpen(false)}
+                                    >
+                                      <span className="font-bold text-[9px] xl:text-[10px] uppercase tracking-tight block group-hover/item:translate-x-1 transition-transform text-left">
+                                        {course.title}
+                                      </span>
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* All Courses Link */}
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex justify-center">
+                          <Link
+                            href="/courses"
+                            className="group flex items-center gap-2 px-6 py-2 bg-[#0b1f3a] text-white rounded-full font-black text-[9px] uppercase tracking-[0.15em] hover:bg-blue-600 transition-all shadow-lg active:scale-95"
+                            onClick={() => setIsCoursesMenuOpen(false)}
+                          >
+                            Explore Full Catalog
+                            <div className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                              <ChevronDown size={10} className="-rotate-90" />
+                            </div>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="px-1 xl:px-4 py-2 font-bold text-[#0b1f3a] hover:text-blue-600 transition lg:text-[11px] xl:text-[13px] uppercase tracking-tighter xl:tracking-tight whitespace-nowrap"
+                  >
+                    {item.name}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -176,13 +254,61 @@ const Navbar = () => {
         <ul className="space-y-1 overflow-y-auto">
           {menuItems.map((item) => (
             <li key={item.name}>
-              <Link
-                href={item.href}
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-3 text-lg font-bold text-[#0b1f3a] hover:bg-blue-50 hover:text-blue-600 rounded-xl transition"
-              >
-                {item.name}
-              </Link>
+              {item.dropdown ? (
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setIsCoursesMenuOpen(!isCoursesMenuOpen)}
+                    className="flex items-center justify-between w-full px-4 py-3 text-lg font-bold text-[#0b1f3a] hover:bg-blue-50 hover:text-blue-600 rounded-xl transition"
+                  >
+                    {item.name}
+                    <ChevronDown size={20} className={`transition-transform ${isCoursesMenuOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {isCoursesMenuOpen && (
+                    <div className="pl-4 space-y-6 py-4">
+                      {groupedCourses.map((group) => (
+                        <div key={group.name} className="space-y-3">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2 border-l-2 border-blue-500">{group.name}</h4>
+                          <div className="space-y-1">
+                            {group.items.map((course: any) => (
+                              <Link
+                                key={course.id}
+                                href={`/courses/${course.id}`}
+                                onClick={() => {
+                                  setIsMenuOpen(false);
+                                  setIsCoursesMenuOpen(false);
+                                }}
+                                className="block px-4 py-2 text-[13px] font-bold text-gray-600 hover:text-blue-600 transition uppercase"
+                              >
+                                {course.title}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="pt-2">
+                        <Link
+                          href="/courses"
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            setIsCoursesMenuOpen(false);
+                          }}
+                          className="block px-6 py-4 bg-blue-600 text-white text-center rounded-xl font-bold uppercase text-sm tracking-widest"
+                        >
+                          View All Courses
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  href={item.href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block px-4 py-3 text-lg font-bold text-[#0b1f3a] hover:bg-blue-50 hover:text-blue-600 rounded-xl transition"
+                >
+                  {item.name}
+                </Link>
+              )}
             </li>
           ))}
         </ul>
