@@ -310,4 +310,139 @@ router.delete("/accreditations/:id", async (req, res) => {
     }
 });
 
+// --- Courses Management ---
+
+// Get all courses
+router.get("/courses", async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM courses ORDER BY created_at DESC");
+        res.json(result.rows);
+    } catch (err) {
+        console.error("[courses] DB error:", err.message);
+        res.status(500).json({ error: "Server Error", message: err.message });
+    }
+});
+
+// Get single course by ID or slug
+router.get("/courses/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            "SELECT * FROM courses WHERE id = $1 OR slug = $2",
+            [parseInt(id) || -1, id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Course not found" });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error("[courses/:id] DB error:", err.message);
+        res.status(500).json({ error: "Server Error" });
+    }
+});
+
+// Add a new course
+router.post("/courses", async (req, res) => {
+    try {
+        const {
+            title,
+            slug,
+            category,
+            eligibility,
+            duration,
+            certification,
+            detailed_syllabus,
+            admissions,
+            json_data
+        } = req.body;
+
+        const result = await pool.query(
+            `INSERT INTO courses 
+            (title, slug, category, eligibility, duration, certification, detailed_syllabus, admissions, json_data) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+            RETURNING *`,
+            [
+                title,
+                slug || title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
+                category,
+                eligibility,
+                duration,
+                certification,
+                detailed_syllabus,
+                admissions,
+                JSON.stringify(json_data || {})
+            ]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error("[courses POST] DB error:", err.message);
+        res.status(500).json({ error: "Server Error", detail: err.detail });
+    }
+});
+
+// Update a course
+router.put("/courses/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            title,
+            slug,
+            category,
+            eligibility,
+            duration,
+            certification,
+            detailed_syllabus,
+            admissions,
+            json_data
+        } = req.body;
+
+        const result = await pool.query(
+            `UPDATE courses SET 
+                title = $1, 
+                slug = $2, 
+                category = $3, 
+                eligibility = $4, 
+                duration = $5, 
+                certification = $6, 
+                detailed_syllabus = $7, 
+                admissions = $8, 
+                json_data = $9, 
+                updated_at = CURRENT_TIMESTAMP 
+            WHERE id = $10 RETURNING *`,
+            [
+                title,
+                slug,
+                category,
+                eligibility,
+                duration,
+                certification,
+                detailed_syllabus,
+                admissions,
+                JSON.stringify(json_data || {}),
+                id
+            ]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Course not found" });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error("[courses PUT] DB error:", err.message);
+        res.status(500).json({ error: "Server Error" });
+    }
+});
+
+// Delete a course
+router.delete("/courses/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query("DELETE FROM courses WHERE id = $1", [id]);
+        res.json({ message: "Course deleted successfully" });
+    } catch (err) {
+        console.error("[courses DELETE] DB error:", err.message);
+        res.status(500).json({ error: "Server Error" });
+    }
+});
+
 module.exports = router;

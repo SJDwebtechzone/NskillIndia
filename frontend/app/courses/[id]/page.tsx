@@ -1,4 +1,4 @@
-import { courses } from "@/data/courses";
+// import { courses } from "@/data/courses"; // REMOVED
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,10 +8,33 @@ import SidebarVideo from "../../components/SidebarVideo";
 
 export default async function CoursePage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const course = courses.find((c: any) => c.id === id);
+    // const course = courses.find((c: any) => c.id === id); // OLD
+
+    let course = null;
+    let allCourses = [];
+    try {
+        const [courseRes, allRes] = await Promise.all([
+            fetch(`http://localhost:5000/api/settings/courses/${id}`, { next: { revalidate: 60 } }),
+            fetch(`http://localhost:5000/api/settings/courses`, { next: { revalidate: 60 } })
+        ]);
+
+        if (courseRes.ok) course = await courseRes.json();
+        if (allRes.ok) allCourses = await allRes.json();
+    } catch (err) {
+        console.error("Failed to fetch course data", err);
+    }
 
     if (!course) {
         notFound();
+    }
+
+    // Merge json_data into the course object for compatibility
+    if (course.json_data) {
+        Object.assign(course, course.json_data);
+    }
+    // Map DB content field
+    if (course.detailed_syllabus && !course.content) {
+        course.content = [course.detailed_syllabus];
     }
 
     // Fetch dynamic popup settings to get the featured video URL
@@ -295,7 +318,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
                             <nav className="p-8">
                                 <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-8">Related Path</h4>
                                 <div className="space-y-1">
-                                    {courses
+                                    {allCourses
                                         .filter((c: any) => c.category === course.category && c.id !== course.id)
                                         .map((related: any) => (
                                             <Link

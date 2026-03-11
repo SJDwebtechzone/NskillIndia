@@ -16,7 +16,7 @@ import {
   Clock,
   ChevronDown,
 } from "lucide-react";
-import { courses } from "@/data/courses";
+// import { courses } from "@/data/courses"; // REMOVED
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -31,6 +31,23 @@ const Navbar = () => {
   const [isCoursesMenuOpen, setIsCoursesMenuOpen] = useState(false);
   const coursesMenuRef = useRef<HTMLDivElement>(null);
 
+  const [dbCourses, setDbCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/settings/courses');
+        if (res.ok) {
+          const data = await res.json();
+          setDbCourses(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch courses for navbar", err);
+      }
+    };
+    fetchCourses();
+  }, []);
+
   // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,9 +60,9 @@ const Navbar = () => {
   }, []);
 
   const groupedCourses = [
-    { name: "Basic Course", items: courses.filter(c => c.category === "Basic") },
-    { name: "Advance Course", items: courses.filter(c => c.category === "Advance") },
-    { name: "International Course", items: courses.filter(c => c.category === "International") },
+    { name: "Basic Course", items: dbCourses.filter(c => c.category === "Basic") },
+    { name: "Advance Course", items: dbCourses.filter(c => c.category === "Advance") },
+    { name: "International Course", items: dbCourses.filter(c => c.category === "International") },
   ];
 
   const menuItems = [

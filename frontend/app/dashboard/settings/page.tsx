@@ -15,7 +15,11 @@ import {
     Globe,
     Video,
     Film,
-    Play
+    Play,
+    BookOpen,
+    GraduationCap as GradIcon,
+    Clock,
+    Award as AwardIcon
 } from "lucide-react";
 import { courses } from "@/data/courses";
 
@@ -53,16 +57,37 @@ interface Accreditation {
     created_at: string;
 }
 
+interface DB_Course {
+    id: number;
+    slug: string;
+    title: string;
+    category: string;
+    eligibility: string;
+    duration: string;
+    certification: string;
+    detailed_syllabus: string;
+    admissions: string;
+    json_data: any;
+    created_at: string;
+}
+
 function SettingsContent() {
     const searchParams = useSearchParams();
     const tab = searchParams.get("tab");
-    const [activeTab, setActiveTab] = useState(tab === "accreditations" ? "accreditations" : tab === "popup" ? "popup" : tab === "news" ? "news" : "banner");
+    const [activeTab, setActiveTab] = useState(
+        tab === "accreditations" ? "accreditations" :
+            tab === "popup" ? "popup" :
+                tab === "news" ? "news" :
+                    tab === "courses" ? "courses" :
+                        "banner"
+    );
 
     // Sync tab when URL changes (sidebar navigation)
     useEffect(() => {
         if (tab === "popup") setActiveTab("popup");
         else if (tab === "news") setActiveTab("news");
         else if (tab === "accreditations") setActiveTab("accreditations");
+        else if (tab === "courses") setActiveTab("courses");
         else setActiveTab("banner");
     }, [tab]);
 
@@ -70,6 +95,7 @@ function SettingsContent() {
     const [popups, setPopups] = useState<Popup[]>([]);
     const [news, setNews] = useState<NewsItem[]>([]);
     const [accreditations, setAccreditations] = useState<Accreditation[]>([]);
+    const [dbCourses, setDbCourses] = useState<DB_Course[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [bannerForm, setBannerForm] = useState({
@@ -101,7 +127,17 @@ function SettingsContent() {
         fetchPopups();
         fetchNews();
         fetchAccreditations();
+        fetchCourses();
     }, []);
+
+    const fetchCourses = async () => {
+        try {
+            const res = await axios.get(`${API_BASE_URL}/courses`);
+            setDbCourses(res.data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const fetchBanners = async () => {
         try {
@@ -263,6 +299,60 @@ function SettingsContent() {
         if (!confirm("Are you sure you want to delete this accreditation?")) return;
         await axios.delete(`${API_BASE_URL}/accreditations/${id}`);
         fetchAccreditations();
+    };
+
+    const [courseForm, setCourseForm] = useState<Partial<DB_Course>>({
+        title: "",
+        slug: "",
+        category: "Basic",
+        eligibility: "",
+        duration: "",
+        certification: "",
+        detailed_syllabus: "",
+        admissions: "",
+        json_data: {}
+    });
+    const [editingCourseId, setEditingCourseId] = useState<number | null>(null);
+
+    const handleCourseSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            if (editingCourseId) {
+                await axios.put(`${API_BASE_URL}/courses/${editingCourseId}`, courseForm);
+            } else {
+                await axios.post(`${API_BASE_URL}/courses`, courseForm);
+            }
+            setCourseForm({
+                title: "",
+                slug: "",
+                category: "Basic",
+                eligibility: "",
+                duration: "",
+                certification: "",
+                detailed_syllabus: "",
+                admissions: "",
+                json_data: {}
+            });
+            setEditingCourseId(null);
+            fetchCourses();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const editCourse = (course: DB_Course) => {
+        setCourseForm(course);
+        setEditingCourseId(course.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const deleteCourse = async (id: number) => {
+        if (!confirm("Are you sure you want to delete this course?")) return;
+        await axios.delete(`${API_BASE_URL}/courses/${id}`);
+        fetchCourses();
     };
 
     return (
@@ -631,6 +721,167 @@ function SettingsContent() {
                                             className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all ml-2 shrink-0"
                                         >
                                             <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === "courses" && (
+                    <div className="animate-in fade-in slide-in-from-right duration-500">
+                        <div className="flex items-center justify-between mb-8">
+                            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Skill Training Courses</h1>
+                            <span className="px-4 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full">{dbCourses.length} Registered</span>
+                        </div>
+
+                        {/* Add/Edit Course Form */}
+                        <div className="bg-slate-50/50 border border-slate-100 p-8 rounded-[24px] mb-12">
+                            <form onSubmit={handleCourseSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Course Title</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter full course name"
+                                        value={courseForm.title}
+                                        onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
+                                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-slate-700"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Slug / URL ID</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. advance-hvac-training"
+                                        value={courseForm.slug}
+                                        onChange={(e) => setCourseForm({ ...courseForm, slug: e.target.value })}
+                                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-slate-700"
+                                    />
+                                </div>
+                                <div className="space-y-2 text-left">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                                    <select
+                                        value={courseForm.category}
+                                        onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })}
+                                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-slate-700 appearance-none"
+                                    >
+                                        <option value="Basic">Basic</option>
+                                        <option value="Advance">Advance</option>
+                                        <option value="International">International</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Eligibility</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Min Qualification"
+                                        value={courseForm.eligibility}
+                                        onChange={(e) => setCourseForm({ ...courseForm, eligibility: e.target.value })}
+                                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-slate-700"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Duration</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 1 Month"
+                                        value={courseForm.duration}
+                                        onChange={(e) => setCourseForm({ ...courseForm, duration: e.target.value })}
+                                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-slate-700"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Certification Body</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. NSDC Approved"
+                                        value={courseForm.certification}
+                                        onChange={(e) => setCourseForm({ ...courseForm, certification: e.target.value })}
+                                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-slate-700"
+                                    />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Detailed Syllabus (Use - for bullets)</label>
+                                    <textarea
+                                        rows={8}
+                                        placeholder="- Chapter 1: Intro&#10;- Chapter 2: Hardware"
+                                        value={courseForm.detailed_syllabus}
+                                        onChange={(e) => setCourseForm({ ...courseForm, detailed_syllabus: e.target.value })}
+                                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-slate-700"
+                                    />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Admissions Information</label>
+                                    <textarea
+                                        rows={3}
+                                        placeholder="Enter admissions guidelines..."
+                                        value={courseForm.admissions}
+                                        onChange={(e) => setCourseForm({ ...courseForm, admissions: e.target.value })}
+                                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-medium text-slate-700"
+                                    />
+                                </div>
+                                <div className="md:col-span-2 flex justify-end gap-3 mt-4">
+                                    {editingCourseId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => { setEditingCourseId(null); setCourseForm({ title: "", slug: "", category: "Basic" }); }}
+                                            className="px-8 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl transition-all hover:bg-slate-200"
+                                        >
+                                            Cancel
+                                        </button>
+                                    )}
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98] disabled:opacity-50"
+                                    >
+                                        {loading ? "Saving..." : editingCourseId ? "Update Course" : "Add New Course"}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Course List */}
+                        <div className="grid grid-cols-1 gap-4">
+                            {dbCourses.map((course) => (
+                                <div key={course.id} className="group flex flex-col md:flex-row items-start md:items-center gap-6 bg-white border border-slate-100 p-6 rounded-[28px] hover:shadow-xl transition-all duration-300">
+                                    <div className="bg-blue-50 h-16 w-16 rounded-2xl flex items-center justify-center shrink-0">
+                                        <GradIcon className="w-8 h-8 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${course.category === 'Basic' ? 'bg-emerald-50 text-emerald-600' :
+                                                    course.category === 'Advance' ? 'bg-blue-50 text-blue-600' :
+                                                        'bg-purple-50 text-purple-600'
+                                                }`}>
+                                                {course.category}
+                                            </span>
+                                            <span className="text-slate-400 text-[10px] font-bold">SLUG: {course.slug}</span>
+                                        </div>
+                                        <h3 className="font-black text-slate-800 text-xl tracking-tight leading-none">{course.title}</h3>
+                                        <div className="flex items-center gap-4 pt-1">
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
+                                                <Clock className="w-3.5 h-3.5" /> {course.duration}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
+                                                <AwardIcon className="w-3.5 h-3.5" /> {course.certification}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                                        <button
+                                            onClick={() => editCourse(course)}
+                                            className="px-6 py-3 bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all"
+                                        >
+                                            Edit Details
+                                        </button>
+                                        <button
+                                            onClick={() => deleteCourse(course.id)}
+                                            className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
                                         </button>
                                     </div>
                                 </div>

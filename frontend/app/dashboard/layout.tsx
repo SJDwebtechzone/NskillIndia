@@ -63,6 +63,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Featured Popup", path: "/dashboard/settings?tab=popup", icon: Layers },
     { name: "Latest News", path: "/dashboard/settings?tab=news", icon: Settings },
     { name: "Accreditations", path: "/dashboard/settings?tab=accreditations", icon: Award },
+    { name: "Skill Training Courses", path: "/dashboard/settings?tab=courses", icon: GraduationCap },
   ];
 
   return (
@@ -182,6 +183,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     isActive = pathname.includes("/dashboard/settings") && tabParam === "news";
                   } else if (item.name === "Accreditations") {
                     isActive = pathname.includes("/dashboard/settings") && tabParam === "accreditations";
+                  } else if (item.name === "Skill Training Courses") {
+                    isActive = pathname.includes("/dashboard/settings") && tabParam === "courses";
                   }
                   return (
                     <li key={item.path}>
